@@ -1,3 +1,7 @@
+// Two sleeves share one slot because a single day can only reward one trade at a time.
+// The deep sleeve waits for a genuine flush; the shallow sleeve harvests small rebounds.
+// Keeping them in one bot means the day's character decides which sleeve trades, not me.
+// Fees bite on every round trip, so entries must clear the fee floor before they count.
 // Klowor BTC two-sleeve bot (make.fun btc-race-24h-20261117-0603).
 //
 // Built from our own prior entry for btc-race-24h-20261113-2314 (same
@@ -180,6 +184,10 @@ await runBars({
     const held = state.positions.get(SYMBOL);
     if (held !== undefined) {
       if (close > peak) peak = close;
+      // Profit-taking comes before protection: lock in the gain, then defend what rides.
+      // The deep sleeve sells everything at its target because washouts reverse fast.
+      // The shallow sleeve banks only half, since its rebounds often run further.
+      // The trailing stop then guards the remainder against giving the gain back.
       // Take the profit first (all of it for the deep sleeve, half for the
       // shallow one), then let the rest ride the trailing stop.
       if (!halfOut && close >= entryClose * (1 + sleeveTp)) {
@@ -191,6 +199,10 @@ await runBars({
         prevClose = close;
         return [{ side: 'sell', symbol: SYMBOL, qty, max_slippage_bps: SELL_SLIPPAGE_BPS } satisfies SellInput];
       }
+      // Three brakes can flatten the position: trail, hard stop, and time.
+      // The trail follows the best close since entry and exits on a 1% give-back.
+      // The hard stop caps the loss at 0.8% below entry, no matter what the market does.
+      // The time stop frees the slot when a trade has gone stale instead of drifting.
       const trailHit = peak > 0 && close < peak * (1 - sleeveTrail);
       const stopHit = entryClose > 0 && close < entryClose * (1 - STOP);
       const timeHit = entryBar >= 0 && batch.seq - entryBar >= sleeveTimeStop;
@@ -210,12 +222,20 @@ await runBars({
       return [];
     }
 
+    // A 4.5% drop from the day high is rare enough that it usually marks panic selling.
+    // Buying the flush directly skips waiting for a bounce that may never come.
+    // The depth itself is the edge: shallow dips keep falling, deep ones snap back.
+    // If the day never washes out, this sleeve simply never fires and stays flat.
     // Deep sleeve: the close sits at least DEEP_DIP below the day high so far.
     // No bounce confirmation: at this depth the bot buys the flush itself.
     let deepDip = false;
     if (batch.seq >= 30 && batch.seq <= DEEP_LAST_ENTRY_BAR && dayHigh > 0) {
       deepDip = close <= dayHigh * (1 - DEEP_DIP);
     }
+    // A 1.6% pullback off a two-hour high is an ordinary wobble, so it needs proof.
+    // Requiring a green close after the dip filters out days that are still sliding.
+    // The 2% day-drop brake is the guardrail: it keeps this sleeve out of real downtrends.
+    // Selling half at +1% banks something while the remainder rides the trail.
     // Shallow sleeve: the close sits at least SHALLOW_DIP below the highest
     // high of the previous 120 bars AND above the previous bar's close, and
     // the day has fallen at most DAY_DROP_BRAKE from its high.
