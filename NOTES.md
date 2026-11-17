@@ -8,4 +8,10 @@
 - Also tried brake 2.5%/3.0%: worst case improves to +1.10 on all four windows but total drops to +17.79 (extra shallow trades on the -4.91% day lose ~$12). Kept brake 2.0% (2314-validated).
 
 ## Iteration count: 4 graded variants (V1-V4), final = V4.
-## Kit grade-local: (fill in after run)
+## Kit grade-local (process driver, run twice, L1 regrade byte-identical):
+- net PnL +7.613888 USDC, 3 trades, win rate 1.0, max drawdown 0.5737613%, fees 0.803208 USDC (2x fees +6.809103), guardrails met, 0 rejected.
+- action_log_sha256 d1a525f5842c79fe08e067c2518846819a9d52d1f5625f091a7a2bd9cb56fd12
+- result_sha256 feb0e622a588cb6336e5e8b671cbfd5d4a6689cb3c127222e3ad3469e344f636 (worktree pre-commit; post-commit re-grade same PnL + same action log, result e5098bff... — differs only by worktree hash; local node v24.22.1 vs server v26.13.1)
+- DEV GATE: PASS (PnL > $0).
+## Repo: https://github.com/Klowor2002/btc-race-0603-bot — commit f530eeeb94743b9c6c1179afecd5cea6bf038543 (main), created after opening (06:03Z), public, MIT LICENSE, README with 3 make.fun badges, About set (homepage bounty page, topics makefun/trading-bot/bitcoin).
+## NOT submitted — parent finishes (bundle + submit). Deadline 2026-11-17T12:03:00Z.
